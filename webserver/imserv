@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import os
+from argparse import ArgumentParser
+from bottle import (route, get, error, hook, request, response, abort,
+                    static_file)
+from bottle import run as run_bottle
+from paginate import Page
+
+_all_files = []
+_total = 0
+
+
+def load(exts):
+    """
+    Load filenames from directory. It uses global attr.
+    """
+    global _all_files
+    global _total
+
+    def isserv(name, exts):
+        return any([name.lower().endswith('.{}'.format(
+                   ext.lower())) for ext in exts])
+
+    _all_files = [n for n in os.listdir(servdir) if isserv(n, exts)]
+    _total = len(_all_files)
+
+
+@hook('after_request')
+def enable_cors():
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+
+@error(404)
+def error_404(err):
+    return 'Oops! File not found! : {}'.format(err)
+
+
+@route('/favicon.ico')
+def favicon():
+    abort(404)
+
+
+def getint(key):
+    try:
+        return int(request.query.get(key, 1))
+    except Exception as e:
+        return 1
+
+
+@route('/')
+def index():
+    pagenum = getint('page')
+    chunk_size = 24
+    page = Page(_all_files, page=pagenum,
+                items_per_page=chunk_size, item_count_len=_total)
+    if page.last_page < pagenum:
+        page = Page(_all_files, page=page.last_page,
+                    items_per_page=chunk_size, item_count_len=_total)
+    return {'files': page.items,
+            # |<
+            'first': page.first_page,
+            # <
+            'prev': (page.previous_page
+                     if page.previous_page else page.first_page),
+            # current page
+            'current': page.page,
+            # >
+            'next': page.next_page if page.next_page else page.last_page,
+            # >|
+            'last': page.last_page,
+            # total items
+            'total': page.item_count,
+            # count in this page
+            'count': page.items_per_page,
+            # first_item
+            'first_item': page.first_item,
+            # last_item
+            'last_item': page.last_item,
+            }
+
+
+@route('/<path>')
+def listdir(path):
+    return static_file(path, root=servdir)
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='Serve images in a directory')
+    parser.add_argument('-H', '--host', default='localhost')
+    parser.add_argument('-p', '--port', type=int, default=8080)
+    parser.add_argument('-e', '--extensions', default='jpg,png,gif',
+                        help='extensions (comma sepalated)')
+    parser.add_argument('directory', nargs='?', default='.')
+    args = parser.parse_args()
+
+    global servdir
+    servdir = args.directory
+    load(args.extensions.split(','))
+    print('Serving at {}'.format(args.directory))
+    run_bottle(host='localhost', port=args.port, debug=True)
