@@ -20,7 +20,8 @@ If you are running in a directory with a file called 001.jpg,
 We will access it as /001.jpg.
 
 ```
-usage: imserv [-h] [-H HOST] [-p PORT] [-e EXTENSIONS] [directory]
+usage: imserv [-h] [-H HOST] [-p PORT] [--items ITEMS] [-e EXTENSIONS]
+              [directory]
 
 Serve images in a directory
 
@@ -29,8 +30,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -H HOST, --host HOST
-  -p PORT, --port PORT
+  -H HOST, --host HOST  listen address
+  -p PORT, --port PORT  listen port
+  --items ITEMS         items per page
   -e EXTENSIONS, --extensions EXTENSIONS
                         extensions (comma sepalated)
 ```

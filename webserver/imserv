@@ -23,7 +23,7 @@ def load(exts):
         return any([name.lower().endswith('.{}'.format(
                    ext.lower())) for ext in exts])
 
-    _all_files = [n for n in os.listdir(servdir) if isserv(n, exts)]
+    _all_files = [n for n in os.listdir(_servdir) if isserv(n, exts)]
     _total = len(_all_files)
 
 
@@ -52,12 +52,11 @@ def getint(key):
 @route('/')
 def index():
     pagenum = getint('page')
-    chunk_size = 24
     page = Page(_all_files, page=pagenum,
-                items_per_page=chunk_size, item_count_len=_total)
+                items_per_page=_chunk_size, item_count_len=_total)
     if page.last_page < pagenum:
         page = Page(_all_files, page=page.last_page,
-                    items_per_page=chunk_size, item_count_len=_total)
+                    items_per_page=_chunk_size, item_count_len=_total)
     return {'files': page.items,
             # |<
             'first': page.first_page,
@@ -83,20 +82,23 @@ def index():
 
 @route('/<path>')
 def listdir(path):
-    return static_file(path, root=servdir)
+    return static_file(path, root=_servdir)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Serve images in a directory')
-    parser.add_argument('-H', '--host', default='localhost')
-    parser.add_argument('-p', '--port', type=int, default=8080)
+    parser.add_argument('-H', '--host', help='listen address', default='localhost')
+    parser.add_argument('-p', '--port', help='listen port', type=int, default=8080)
+    parser.add_argument('--items', type=int, help='items per page', default=24)
     parser.add_argument('-e', '--extensions', default='jpg,png,gif',
                         help='extensions (comma sepalated)')
     parser.add_argument('directory', nargs='?', default='.')
     args = parser.parse_args()
 
-    global servdir
-    servdir = args.directory
+    global _servdir
+    global _chunk_size
+    _chunk_size = args.items
+    _servdir = args.directory
     load(args.extensions.split(','))
     print('Serving at {}'.format(args.directory))
     run_bottle(host='localhost', port=args.port, debug=True)
