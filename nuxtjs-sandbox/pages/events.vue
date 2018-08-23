@@ -35,6 +35,7 @@
 	     this.count++
 	     this.key = event.key
 	 },
+	 onScroll(event){ },
      },
      mounted () {
 	 console.log('mounted')
@@ -43,11 +44,13 @@
      beforeMount () {
 	 console.log('beforeMount')
 	 window.addEventListener('keydown', this.keyDownEvent)
+	 window.addEventListener('scroll', this.onScroll)
 	 //window.addEventListener('keyup', this.keyUpEvent)
      },
      destroyed () {
 	 console.log('destroyed')
 	 window.removeEventListener('keydown', this.keyDownEvent)
+	 window.removeEventListener('scroll', this.onScroll)
 	 //window.removeEventListener('keyup', this.keyUpEvent)
      }
  }
